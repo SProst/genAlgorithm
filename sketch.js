@@ -2,6 +2,7 @@ let boid = [];
 let food = [];
 let matingPool = [];
 let generation = 0;
+let speed = 1;
 const creatureCount = 50;
 const playArea = {w:600, h:600};
 function setup() {
@@ -10,6 +11,10 @@ function setup() {
     boid.push(new Boid(random(playArea.w), random(playArea.h)));
   for(let i = 0; i < 10;i++)
     food.push(new Food(random(playArea.w), random(playArea.h)));
+  let slider = createSlider(1, 200, 1, 1);
+  slider.input(function() {
+    speed = this.value();
+  })
 }
 
 function mousePressed() {
@@ -66,62 +71,68 @@ function processClosest(closest, b, arr) {
 }
 function draw() {
   background(0);
-  for(let b of boid) {
-    b.update();
-    let closestFood = b.seekFood(food);
-    let closestBoid = b.seekFood(boid);
-    if(closestFood && closestBoid) {
-      if(closestFood.d < closestBoid.d) {
+  for(let i = 0; i < speed; i++) {
+    for(let b of boid) {
+      b.update();
+      let closestFood = b.seekFood(food);
+      let closestBoid = b.seekFood(boid);
+      if(closestFood && closestBoid) {
+        if(closestFood.d < closestBoid.d) {
+          b.addForce(closestFood.dir);
+          if(closestFood.d < 5) {
+            b.eaten++;
+            b.energy += closestFood.target.cal;
+            food.splice(food.indexOf(closestFood.target), 1);
+          }
+        } else {
+          b.addForce(closestBoid.dir);
+          if(closestBoid.d < 5) {
+            b.eaten++;
+            b.energy += closestBoid.target.cal;
+            boid.splice(boid.indexOf(closestBoid.target), 1);
+          }
+        }      
+      } else if(closestFood) {
         b.addForce(closestFood.dir);
         if(closestFood.d < 5) {
           b.eaten++;
           b.energy += closestFood.target.cal;
           food.splice(food.indexOf(closestFood.target), 1);
         }
-      } else {
+      } else if(closestBoid) {
         b.addForce(closestBoid.dir);
         if(closestBoid.d < 5) {
           b.eaten++;
           b.energy += closestBoid.target.cal;
           boid.splice(boid.indexOf(closestBoid.target), 1);
         }
-      }      
-    } else if(closestFood) {
-      b.addForce(closestFood.dir);
-      if(closestFood.d < 5) {
-        b.eaten++;
-        b.energy += closestFood.target.cal;
-        food.splice(food.indexOf(closestFood.target), 1);
+      } else {
+        //b.vel.mult(0.99);
       }
-    } else if(closestBoid) {
-      b.addForce(closestBoid.dir);
-      if(closestBoid.d < 5) {
-        b.eaten++;
-        b.energy += closestBoid.target.cal;
-        boid.splice(boid.indexOf(closestBoid.target), 1);
+      b.avoid(boid);
+
+      
+      if(b.energy >= 300) {
+        let c = b.clone();
+        b.energy -= 100;
+        c.mutate(0.08);
+        boid.push(c);
       }
-    } else {
-      //b.vel.mult(0.99);
+      if(b.dead) {
+        food.push(new Food(b.pos.x, b.pos.y, b.cal));
+        boid.splice(boid.indexOf(b), 1);
+      }
     }
-    b.avoid(boid);
-    
+    if(random() < 0.3)
+      food.push(new Food(random(playArea.w), random(playArea.h)));
+  }
+  for(let b of boid) {
     b.render();
-    if(b.energy >= 300) {
-      let c = b.clone();
-      b.energy -= 100;
-      c.mutate(0.08);
-      boid.push(c);
-    }
-    if(b.dead) {
-      food.push(new Food(b.pos.x, b.pos.y, b.cal));
-      boid.splice(boid.indexOf(b), 1);
-    }
   }
   for(let f of food) {
     f.render();
   }
-  if(random() < 0.3)
-    food.push(new Food(random(playArea.w), random(playArea.h)));
+ 
   //if(frameCount % 1000 == 0) {
   //  repopulate();
   //}
