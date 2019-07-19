@@ -11,7 +11,7 @@ function setup() {
     boid.push(new Boid(random(playArea.w), random(playArea.h)));
   for(let i = 0; i < 10;i++)
     food.push(new Food(random(playArea.w), random(playArea.h)));
-  let slider = createSlider(1, 2000, 1, 1);
+  let slider = createSlider(1, 500, 1, 1);
   slider.input(function() {
     speed = this.value();
   })
